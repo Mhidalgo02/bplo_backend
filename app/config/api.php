@@ -97,7 +97,7 @@ $config['refresh_token_key']  = getenv('REFRESH_TOKEN_KEY') ?: '';
 |
 */
 // The LavaLust Api::handle_cors() method expects an array for multiple origins.
-$allowedOrigins = getenv('ALLOW_ORIGIN') ?: 'http://localhost:5173,http://localhost:4173';
+$allowedOrigins = getenv('ALLOW_ORIGIN') ?: 'http://localhost:5173,http://localhost:4173,http://192.168.254.181:4173';
 $config['allow_origin'] = ($allowedOrigins === '*')
     ? '*'
     : array_values(array_filter(array_map('trim', explode(',', $allowedOrigins))));
