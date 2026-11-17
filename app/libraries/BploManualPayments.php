@@ -99,10 +99,11 @@ class BploManualPayments
         $amount = self::cents($data['amount'] ?? '', true);
         $purpose = $this->text($data, 'purpose', 500);
         $method = $amount ? $this->text($data, 'method', 30) : '';
-        if ($amount && !in_array($method, ['GCash', 'Maya', 'Bank Transfer'], true)) throw new DomainException('Select GCash, Maya or Bank Transfer.', 422);
+        if ($amount && !in_array($method, ['GCash', 'Maya', 'Bank Transfer', 'Stripe'], true)) throw new DomainException('Select GCash, Maya, Bank Transfer or Stripe.', 422);
+        $stripe = $method === 'Stripe';
         $fields = ['amount_cents' => $amount, 'purpose' => $purpose, 'method' => $method,
-            'account_name' => $amount ? $this->text($data, 'accountName', 180) : '',
-            'account_number' => $amount ? $this->text($data, 'accountNumber', 100) : '',
+            'account_name' => $amount && !$stripe ? $this->text($data, 'accountName', 180) : '',
+            'account_number' => $amount && !$stripe ? $this->text($data, 'accountNumber', 100) : '',
             'instructions' => $this->text($data, 'instructions', 2000, false), 'assessed_by' => $actor['id'],
             'assessed_at' => gmdate('Y-m-d H:i:s')];
         $this->change($id, function ($app) use ($id, $actor, $fields) {
@@ -132,6 +133,7 @@ class BploManualPayments
             $state = $this->state($id);
             $fee = $state['assessment'];
             if (!$fee || (int)$fee['amount_cents'] === 0) throw new DomainException('No payable fee has been assessed.', 409);
+            if ($fee['method'] === 'Stripe') throw new DomainException('This fee is paid online through Stripe. Use the Pay with Stripe button instead of uploading proof.', 409);
             if (!in_array($state['paymentStatus'], ['Unpaid', 'Rejected'], true)) throw new DomainException('A payment is already awaiting verification or has been paid.', 409);
             if ($amount !== (int)$fee['amount_cents']) throw new DomainException('The payment amount must match the assessed amount due.', 422);
             $key = hash('sha256', $fee['method'] . ':' . strtoupper(preg_replace('/[\s\-._\/]/', '', $reference)));

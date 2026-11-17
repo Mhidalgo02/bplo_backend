@@ -23,6 +23,8 @@ $router->match('/api/bplo/payments','BploPaymentsController::index', 'GET|OPTION
 $router->match('/api/bplo/applications/{ref}/payment', 'BploPaymentsController::application', 'GET|OPTIONS');
 $router->match('/api/bplo/applications/{ref}/payment/assessment', 'BploPaymentsController::assessment', 'PUT|OPTIONS');
 $router->match('/api/bplo/applications/{ref}/payment/notice', 'BploPaymentsController::resendNotice', 'POST|OPTIONS');
+$router->match('/api/bplo/payments/stripe/webhook','BploPaymentsController::stripeWebhook', 'POST|OPTIONS');
+$router->match('/api/bplo/applications/{ref}/payment/stripe-checkout', 'BploPaymentsController::stripeCheckout', 'POST|OPTIONS');
 $router->match('/api/bplo/applications/{ref}/payment/submissions', 'BploPaymentsController::submit', 'POST|OPTIONS');
 $router->match('/api/bplo/applications/{ref}/payment/submissions/{id}/review', 'BploPaymentsController::review', 'PUT|OPTIONS');
 $router->match('/api/bplo/applications/{ref}/payment/submissions/{id}/proof', 'BploPaymentsController::proof', 'GET|OPTIONS');

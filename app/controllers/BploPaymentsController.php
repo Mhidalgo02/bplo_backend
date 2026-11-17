@@ -4,6 +4,7 @@ defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 require_once __DIR__ . '/BploApiBase.php';
 require_once dirname(__DIR__) . '/libraries/BploManualPayments.php';
 require_once dirname(__DIR__) . '/libraries/BploPaymentNotifications.php';
+require_once dirname(__DIR__) . '/libraries/BploStripePayments.php';
 
 class BploPaymentsController extends BploApiBase
 {
@@ -65,6 +66,24 @@ class BploPaymentsController extends BploApiBase
         try { $notice = $this->paymentNotifier()->send($app['id'], $actor); }
         catch (DomainException $e) { $this->fail($e->getMessage(), $e->getCode() ?: 409); }
         $this->send(['message' => 'Notification retry completed. Check the email and SMS results below.', 'notice' => $notice]);
+    }
+
+    public function stripeCheckout($ref)
+    {
+        $actor = $this->jwtless();
+        $app = $this->row($ref);
+        try { $result = (new BploStripePayments($this->db))->checkout($app, $actor); }
+        catch (DomainException $e) { $this->fail($e->getMessage(), $e->getCode() ?: 422); }
+        $this->send(['message' => 'Stripe checkout created.', 'checkoutUrl' => $result['url']]);
+    }
+
+    public function stripeWebhook()
+    {
+        $raw = file_get_contents('php://input', false, null, 0, 1048577);
+        if (strlen($raw) > 1048576) $this->fail('Webhook body too large.', 413);
+        try { $state = (new BploStripePayments($this->db))->webhook($raw, $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? ''); }
+        catch (DomainException $e) { $this->fail($e->getMessage(), $e->getCode() ?: 422); }
+        $this->send(['state' => $state]);
     }
 
     private function proofDirectory()

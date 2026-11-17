@@ -36,16 +36,20 @@ class BploPaymentNotifications
         ];
         if (!$noFee) {
             $lines[] = 'Payment method: ' . $fee['method'];
-            $lines[] = 'Recipient account: ' . $fee['account_name'];
-            $lines[] = 'Account / mobile number: ' . $fee['account_number'];
+            if ($fee['method'] === 'Stripe') {
+                $lines[] = 'Pay online: open Payments in your applicant portal and select Pay with Stripe.';
+            } else {
+                $lines[] = 'Recipient account: ' . $fee['account_name'];
+                $lines[] = 'Account / mobile number: ' . $fee['account_number'];
+            }
         }
         if ($fee['instructions'] !== '') $lines[] = 'Instructions: ' . $fee['instructions'];
-        $lines[] = $noFee ? 'Check your applicant portal for application updates.' : 'After paying, open Payments in your applicant portal and submit the transaction reference, date and proof of payment for verification.';
+        $lines[] = $noFee ? 'Check your applicant portal for application updates.' : ($fee['method'] === 'Stripe' ? 'After paying, your payment is confirmed automatically and marked Paid.' : 'After paying, open Payments in your applicant portal and submit the transaction reference, date and proof of payment for verification.');
         $plain = implode("\n", $lines);
         // SMS stays short; full recipient details and instructions remain available by email and in the portal.
         $sms = $noFee
             ? 'BPLO ' . $app['reference_number'] . ': No payment required (PHP 0.00). Check Payments in your applicant portal.'
-            : 'BPLO ' . $app['reference_number'] . ': Amount to pay PHP ' . $amount . ' via ' . $fee['method'] . '. Open Payments in your applicant portal for recipient details and to upload proof after paying.';
+            : 'BPLO ' . $app['reference_number'] . ': Amount to pay PHP ' . $amount . ' via ' . $fee['method'] . '. ' . ($fee['method'] === 'Stripe' ? 'Open Payments in your applicant portal and select Pay with Stripe.' : 'Open Payments in your applicant portal for recipient details and to upload proof after paying.');
         return ['subject' => 'BPLO payment assessment - ' . $app['reference_number'], 'plain' => $plain,
             'html' => '<p>' . nl2br(htmlspecialchars($plain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>', 'sms' => $sms];
     }
